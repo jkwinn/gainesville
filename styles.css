@@ -467,11 +467,6 @@ h2 {
   text-transform: uppercase;
 }
 
-.calendar-source-link {
-  margin-top: 0;
-  white-space: nowrap;
-}
-
 .photo-grid {
   width: min(1180px, 100%);
   margin: 0 auto;
