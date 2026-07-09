@@ -6,6 +6,7 @@ const upcomingShows = [
     address: "7201 Carlsbad Blvd",
     city: "Carlsbad",
     state: "CA",
+    logo: "assets/venues/the-camp-store-logo-mono.png",
   },
   {
     date: "2026-08-21",
@@ -14,6 +15,7 @@ const upcomingShows = [
     address: "5517 Mission Rd.",
     city: "Bonsall",
     state: "CA",
+    logo: "assets/venues/ringers-lounge-logo-mono.png",
   },
   {
     date: "2026-08-28",
@@ -22,6 +24,7 @@ const upcomingShows = [
     address: "2017 S Coast Hwy #19",
     city: "Oceanside",
     state: "CA",
+    logo: "assets/venues/moose-lodge-1325-logo-mono.png",
   },
   {
     date: "2026-09-10",
@@ -30,6 +33,7 @@ const upcomingShows = [
     address: "2241 Shelter Island Drive",
     city: "San Diego",
     state: "CA",
+    logo: "assets/venues/humphreys-logo-mono.png",
   },
   {
     date: "2026-09-18",
@@ -38,6 +42,7 @@ const upcomingShows = [
     address: "5517 Mission Rd.",
     city: "Bonsall",
     state: "CA",
+    logo: "assets/venues/ringers-lounge-logo-mono.png",
   },
   {
     date: "2026-09-26",
@@ -47,6 +52,7 @@ const upcomingShows = [
     city: "Escondido",
     state: "CA",
     note: "Time TBD",
+    logo: "assets/venues/escondido-moose-lodge-logo-mono.png",
   },
   {
     date: "2026-10-11",
@@ -55,6 +61,7 @@ const upcomingShows = [
     address: "17224 San Pasqual Valley Rd.",
     city: "Escondido",
     state: "CA",
+    logo: "assets/venues/rancho-guejito-vineyard-logo-mono.png",
   },
   {
     date: "2026-10-25",
@@ -63,6 +70,7 @@ const upcomingShows = [
     address: "33515 Rancho California Rd",
     city: "Temecula",
     state: "CA",
+    logo: "assets/venues/bel-vino-winery-logo-mono.png",
   },
   {
     date: "2026-10-30",
@@ -71,6 +79,7 @@ const upcomingShows = [
     address: "5517 Mission Rd.",
     city: "Bonsall",
     state: "CA",
+    logo: "assets/venues/ringers-lounge-logo-mono.png",
   },
   {
     date: "2026-11-12",
@@ -87,6 +96,7 @@ const upcomingShows = [
     address: "33515 Rancho California Rd",
     city: "Temecula",
     state: "CA",
+    logo: "assets/venues/bel-vino-winery-logo-mono.png",
   },
   {
     date: "2026-12-18",
@@ -95,6 +105,7 @@ const upcomingShows = [
     address: "5517 Mission Rd.",
     city: "Bonsall",
     state: "CA",
+    logo: "assets/venues/ringers-lounge-logo-mono.png",
   },
 ];
 
@@ -171,6 +182,111 @@ const formatDate = (value) =>
     timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00Z`));
 
+const siteUrl = "https://jkwinn.github.io/gainesville/";
+
+const escapeIcsText = (value = "") =>
+  String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+
+const slugify = (value) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+const formatIcsDate = (date) => {
+  const pad = (number) => String(number).padStart(2, "0");
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(
+    date.getMinutes(),
+  )}00`;
+};
+
+const parseShowTime = (show) => {
+  const timeMatches = [...show.time.matchAll(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/gi)];
+  const [year, month, day] = show.date.split("-").map(Number);
+
+  if (timeMatches.length === 0) {
+    const start = new Date(year, month - 1, day);
+    const end = new Date(year, month - 1, day + 1);
+    return { allDay: true, start, end };
+  }
+
+  const toHours = (match) => {
+    let hours = Number(match[1]);
+    const minutes = Number(match[2] || 0);
+    const period = match[3].toUpperCase();
+
+    if (period === "AM" && hours === 12) hours = 0;
+    if (period === "PM" && hours !== 12) hours += 12;
+
+    return { hours, minutes };
+  };
+
+  const startTime = toHours(timeMatches[0]);
+  const endTime = toHours(timeMatches[1] || timeMatches[0]);
+  const start = new Date(year, month - 1, day, startTime.hours, startTime.minutes);
+  const end = new Date(year, month - 1, day, endTime.hours, endTime.minutes);
+
+  if (end <= start) {
+    end.setDate(end.getDate() + 1);
+  }
+
+  return { allDay: false, start, end };
+};
+
+const formatIcsDateOnly = (date) => {
+  const pad = (number) => String(number).padStart(2, "0");
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
+};
+
+const createCalendarHref = (show) => {
+  const timing = parseShowTime(show);
+  const location = [show.address, show.city, show.state].filter(Boolean).join(", ");
+  const summary = show.private ? "Gainesville Private Event" : `Gainesville at ${show.venue}`;
+  const uid = `${show.date}-${slugify(show.venue)}@gainesvilletheband.com`;
+  const now = formatIcsDate(new Date());
+
+  const timingLines = timing.allDay
+    ? [`DTSTART;VALUE=DATE:${formatIcsDateOnly(timing.start)}`, `DTEND;VALUE=DATE:${formatIcsDateOnly(timing.end)}`]
+    : [`DTSTART:${formatIcsDate(timing.start)}`, `DTEND:${formatIcsDate(timing.end)}`];
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Gainesville The Band//Shows//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${now}`,
+    ...timingLines,
+    `SUMMARY:${escapeIcsText(summary)}`,
+    `LOCATION:${escapeIcsText(location)}`,
+    `DESCRIPTION:${escapeIcsText(`Gainesville The Band\n${show.time}\n${siteUrl}#shows`)}`,
+    `URL:${siteUrl}#shows`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+};
+
+const createFacebookShareHref = (show) => {
+  const url = `${siteUrl}#shows`;
+  const quote = `${formatDate(show.date)}: Gainesville at ${show.venue}, ${show.city || ""}${show.state ? `, ${show.state}` : ""}`;
+  return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(quote)}`;
+};
+
+const createWordmark = (show) => {
+  const mark = document.createElement("div");
+  mark.className = "venue-wordmark";
+  mark.textContent = show.private ? "Private Event" : show.venue;
+  return mark;
+};
+
 const createShowCard = (show, type = "upcoming") => {
   const card = document.createElement("article");
   card.className = `show-card ${type}`;
@@ -183,11 +299,24 @@ const createShowCard = (show, type = "upcoming") => {
     img.src = show.image;
     img.alt = `${show.venue} past show video still`;
     image.append(img);
+  } else if (show.logo && !show.private) {
+    const logo = document.createElement("img");
+    logo.className = "venue-logo";
+    logo.src = show.logo;
+    logo.alt = `${show.venue} logo`;
+    logo.loading = "lazy";
+    const fallbackToWordmark = () => {
+      image.replaceChildren(createWordmark(show));
+    };
+    logo.onerror = fallbackToWordmark;
+    window.setTimeout(() => {
+      if (!logo.complete || logo.naturalWidth === 0) {
+        fallbackToWordmark();
+      }
+    }, 700);
+    image.append(logo);
   } else {
-    const mark = document.createElement("div");
-    mark.className = "venue-wordmark";
-    mark.textContent = show.private ? "Private Event" : show.venue;
-    image.append(mark);
+    image.append(createWordmark(show));
   }
 
   const body = document.createElement("div");
@@ -198,6 +327,10 @@ const createShowCard = (show, type = "upcoming") => {
     <p class="show-meta">${show.time}<br />${show.city || ""}${show.state ? `, ${show.state}` : ""}</p>
     ${show.address && !show.private ? `<p class="show-meta">${show.address}</p>` : ""}
     ${show.note ? `<p class="show-note">${show.note}</p>` : ""}
+    <div class="show-actions">
+      <a href="${createCalendarHref(show)}" download="gainesville-${show.date}-${slugify(show.venue)}.ics">Add to my Calendar</a>
+      <a href="${createFacebookShareHref(show)}" target="_blank" rel="noreferrer">Share on Facebook</a>
+    </div>
   `;
 
   card.append(image, body);
