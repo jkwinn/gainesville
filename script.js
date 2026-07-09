@@ -1,4 +1,7 @@
-const upcomingShows = [
+const googleCalendarIcsUrl = "";
+const googleGigPrefix = "Gig:";
+
+const manualShows = [
   {
     date: "2026-07-29",
     time: "5:00 PM - 8:30 PM",
@@ -107,7 +110,7 @@ const upcomingShows = [
   },
 ];
 
-const pastShows = [
+const archivedPastShows = [
   {
     date: "2025-12-27",
     time: "6:00 PM - 9:00 PM",
@@ -181,6 +184,17 @@ const formatDate = (value) =>
   }).format(new Date(`${value}T00:00:00Z`));
 
 const siteUrl = "https://jkwinn.github.io/gainesville/";
+
+const getToday = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
+const parseLocalDate = (value) => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
 
 const escapeIcsText = (value = "") =>
   String(value)
@@ -285,6 +299,107 @@ const createWordmark = (show) => {
   return mark;
 };
 
+const unfoldIcs = (text) => text.replace(/\r?\n[ \t]/g, "");
+
+const getIcsValue = (eventText, propertyName) => {
+  const prefix = `${propertyName}`;
+  const line = eventText
+    .split(/\r?\n/)
+    .find((candidate) => candidate.startsWith(`${prefix}:`) || candidate.startsWith(`${prefix};`));
+
+  return line ? line.slice(line.indexOf(":") + 1).replace(/\\,/g, ",").replace(/\\n/g, "\n") : "";
+};
+
+const parseIcsDateValue = (value) => {
+  const compact = value.replace(/Z$/, "");
+  const year = Number(compact.slice(0, 4));
+  const month = Number(compact.slice(4, 6));
+  const day = Number(compact.slice(6, 8));
+  const hours = Number(compact.slice(9, 11) || 0);
+  const minutes = Number(compact.slice(11, 13) || 0);
+  return new Date(year, month - 1, day, hours, minutes);
+};
+
+const toIsoDate = (date) => {
+  const pad = (number) => String(number).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+const formatCalendarTime = (start, end) => {
+  if (!start) return "TBD";
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  return end ? `${formatter.format(start)} - ${formatter.format(end)}` : formatter.format(start);
+};
+
+const parseCalendarLocation = (location) => {
+  const parts = location
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const stateCandidate = parts.at(-1);
+  const city = parts.length >= 2 ? parts.at(-2) : "";
+  const state = stateCandidate && stateCandidate.length <= 3 ? stateCandidate : "CA";
+  const address = parts.length > 2 ? parts.slice(0, -2).join(", ") : location;
+
+  return { address, city, state };
+};
+
+const parseGoogleCalendarShows = (icsText) => {
+  const unfolded = unfoldIcs(icsText);
+  const events = unfolded.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || [];
+
+  return events
+    .map((eventText) => {
+      const summary = getIcsValue(eventText, "SUMMARY").trim();
+      if (!summary.toLowerCase().startsWith(googleGigPrefix.toLowerCase())) return null;
+
+      const start = parseIcsDateValue(getIcsValue(eventText, "DTSTART"));
+      const endValue = getIcsValue(eventText, "DTEND");
+      const end = endValue ? parseIcsDateValue(endValue) : null;
+      const venue = summary.replace(/^Gig:\s*/i, "").trim() || "Gainesville Show";
+      const location = getIcsValue(eventText, "LOCATION");
+      const parsedLocation = parseCalendarLocation(location);
+
+      return {
+        date: toIsoDate(start),
+        time: formatCalendarTime(start, end),
+        venue,
+        ...parsedLocation,
+        note: "From Google Calendar",
+      };
+    })
+    .filter(Boolean);
+};
+
+const loadGoogleCalendarShows = async () => {
+  if (!googleCalendarIcsUrl) return [];
+
+  try {
+    const response = await fetch(googleCalendarIcsUrl);
+    if (!response.ok) throw new Error(`Calendar request failed: ${response.status}`);
+    return parseGoogleCalendarShows(await response.text());
+  } catch (error) {
+    console.warn("Google Calendar shows could not be loaded.", error);
+    return [];
+  }
+};
+
+const mergeShows = (manual, calendar) => {
+  const seen = new Set();
+
+  return [...calendar, ...manual].filter((show) => {
+    const key = `${show.date}-${slugify(show.venue)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const createShowCard = (show, type = "upcoming") => {
   const card = document.createElement("article");
   card.className = `show-card ${type}`;
@@ -330,15 +445,27 @@ const createShowCard = (show, type = "upcoming") => {
   return card;
 };
 
-const renderShows = () => {
+const renderShows = async () => {
   const upcoming = document.querySelector("#upcoming-shows");
   const past = document.querySelector("#past-shows-list");
+  const calendarShows = await loadGoogleCalendarShows();
+  const allShows = mergeShows(manualShows, calendarShows);
+  const today = getToday();
+  const upcomingFromDate = allShows.filter((show) => parseLocalDate(show.date) >= today);
+  const pastFromDate = allShows.filter((show) => parseLocalDate(show.date) < today);
 
-  upcomingShows
+  upcoming.replaceChildren();
+  past.replaceChildren();
+
+  upcomingFromDate
     .sort((a, b) => a.date.localeCompare(b.date))
     .forEach((show) => upcoming.append(createShowCard(show)));
 
-  pastShows
+  if (upcomingFromDate.length === 0) {
+    upcoming.innerHTML = `<p class="empty-state">New dates coming soon.</p>`;
+  }
+
+  [...pastFromDate, ...archivedPastShows]
     .sort((a, b) => b.date.localeCompare(a.date))
     .forEach((show) => past.append(createShowCard(show, "past")));
 };

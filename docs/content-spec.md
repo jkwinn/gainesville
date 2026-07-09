@@ -79,6 +79,15 @@ Editable fields:
 
 Use ISO dates internally. Display dates in a friendly format such as `Jul 29, 2026`.
 
+Dynamic behavior:
+
+- Shows should be split at runtime using the current date.
+- Events with dates today or in the future render under Upcoming Shows.
+- Events before the current date render under Past Shows.
+- Manual show entries remain the fallback source.
+- A Google Calendar ICS source is staged in `script.js` and should be enabled by filling in `googleCalendarIcsUrl`.
+- When Google Calendar is enabled, only calendar events whose summary begins with `Gig:` should be imported as shows.
+
 | Date | Time | Venue | Address | City | State | Venue logo | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-07-29 | 5:00 PM - 8:30 PM | The Camp Store | 7201 Carlsbad Blvd | Carlsbad | CA | TBD |  |

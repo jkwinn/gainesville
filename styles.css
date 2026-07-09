@@ -114,27 +114,41 @@ a {
 }
 
 .hero {
-  min-height: clamp(520px, 68svh, 760px);
+  min-height: clamp(440px, 68svh, 760px);
   display: grid;
   align-items: center;
-  padding-top: clamp(0.85rem, 2.2vw, 2rem);
-  padding-bottom: clamp(1.25rem, 3vw, 2.75rem);
+  padding: 0;
 }
 
 .hero-inner {
-  width: min(1240px, 100%);
+  position: relative;
+  width: 100%;
   margin: 0 auto;
   text-align: center;
   border: 0;
   padding: 0;
   background: transparent;
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
-.hero-logo {
-  width: min(1180px, 100%);
+.hero-photo {
+  width: 100%;
+  min-height: clamp(440px, 68svh, 760px);
+  max-height: 760px;
+  object-fit: cover;
+  object-position: center;
   margin: 0 auto;
-  filter: drop-shadow(0 26px 44px rgba(0, 0, 0, 0.9));
+}
+
+.hero-inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18) 52%, rgba(0, 0, 0, 0.72)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.56), transparent 26%, transparent 74%, rgba(0, 0, 0, 0.56));
 }
 
 .kicker {
@@ -157,7 +171,13 @@ a {
 }
 
 .hero-actions {
-  margin-top: clamp(0.65rem, 1.5vw, 1.15rem);
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.25rem, 4vw, 3rem);
+  z-index: 2;
+  width: min(92%, 520px);
+  margin-top: 0;
+  transform: translateX(-50%);
 }
 
 .button {
@@ -232,6 +252,17 @@ h2 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 1px solid var(--line);
+  padding: clamp(1.25rem, 4vw, 2rem);
+  color: var(--muted-paper);
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 900;
 }
 
 .show-card,
@@ -448,6 +479,17 @@ h2 {
   grid-row: span 2;
 }
 
+.brand-section {
+  position: relative;
+  padding: clamp(2rem, 6vw, 5rem) clamp(1rem, 4vw, 3.5rem) clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.section-logo {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  filter: drop-shadow(0 24px 46px rgba(0, 0, 0, 0.84));
+}
+
 .contact-card {
   width: min(1120px, 100%);
   margin: 0 auto;
@@ -518,6 +560,10 @@ h2 {
 
   .hero {
     min-height: auto;
+  }
+
+  .hero-photo {
+    min-height: 360px;
   }
 
   .hero-actions,
