@@ -298,6 +298,7 @@ const createShowCard = (show, type = "upcoming") => {
     img.alt = `${show.venue} past show video still`;
     image.append(img);
   } else if (show.logo && !show.private) {
+    image.classList.add("has-logo");
     const logo = document.createElement("img");
     logo.className = "venue-logo";
     logo.src = show.logo;
