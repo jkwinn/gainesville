@@ -116,27 +116,28 @@ a {
 }
 
 .hero {
-  min-height: clamp(420px, 55svh, 600px);
+  min-height: clamp(520px, 68svh, 760px);
   display: grid;
   align-items: center;
   border-bottom: 1px solid var(--line);
-  padding-top: clamp(1.25rem, 3vw, 2.5rem);
-  padding-bottom: clamp(1.25rem, 3vw, 2.5rem);
+  padding-top: clamp(0.85rem, 2.2vw, 2rem);
+  padding-bottom: clamp(1.25rem, 3vw, 2.75rem);
 }
 
 .hero-inner {
-  width: min(1120px, 100%);
+  width: min(1240px, 100%);
   margin: 0 auto;
   text-align: center;
-  border: 4px double var(--line);
-  padding: clamp(1.25rem, 4vw, 3rem);
-  background: rgba(0, 0, 0, 0.5);
+  border: 0;
+  padding: 0;
+  background: transparent;
   box-shadow: var(--shadow);
 }
 
 .hero-logo {
-  width: min(780px, 100%);
+  width: min(1180px, 100%);
   margin: 0 auto;
+  filter: drop-shadow(0 26px 44px rgba(0, 0, 0, 0.9));
 }
 
 .kicker {
@@ -148,15 +149,6 @@ a {
   text-transform: uppercase;
 }
 
-.hero-tagline {
-  margin: 1.25rem auto 0;
-  max-width: 780px;
-  color: var(--muted-paper);
-  font-size: clamp(1rem, 2.4vw, 1.35rem);
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
 .hero-actions,
 .contact-actions {
   display: flex;
@@ -165,6 +157,10 @@ a {
   justify-content: center;
   gap: 0.8rem;
   margin-top: 1.5rem;
+}
+
+.hero-actions {
+  margin-top: clamp(0.65rem, 1.5vw, 1.15rem);
 }
 
 .button {
