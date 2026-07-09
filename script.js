@@ -33,7 +33,6 @@ const upcomingShows = [
     address: "2241 Shelter Island Drive",
     city: "San Diego",
     state: "CA",
-    logo: "assets/venues/humphreys-logo-mono.png",
   },
   {
     date: "2026-09-18",
@@ -52,7 +51,6 @@ const upcomingShows = [
     city: "Escondido",
     state: "CA",
     note: "Time TBD",
-    logo: "assets/venues/escondido-moose-lodge-logo-mono.png",
   },
   {
     date: "2026-10-11",
@@ -304,16 +302,10 @@ const createShowCard = (show, type = "upcoming") => {
     logo.className = "venue-logo";
     logo.src = show.logo;
     logo.alt = `${show.venue} logo`;
-    logo.loading = "lazy";
     const fallbackToWordmark = () => {
       image.replaceChildren(createWordmark(show));
     };
     logo.onerror = fallbackToWordmark;
-    window.setTimeout(() => {
-      if (!logo.complete || logo.naturalWidth === 0) {
-        fallbackToWordmark();
-      }
-    }, 700);
     image.append(logo);
   } else {
     image.append(createWordmark(show));
