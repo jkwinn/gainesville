@@ -303,6 +303,10 @@ const createWordmark = (show) => {
   return mark;
 };
 
+const stripGigPrefix = (summary) => summary.replace(/^Gig:\s*/i, "").trim();
+
+const isPrivateEventName = (name) => /^private event\b/i.test(name.trim());
+
 const unfoldIcs = (text) => text.replace(/\r?\n[ \t]/g, "");
 
 const getIcsValue = (eventText, propertyName) => {
@@ -367,7 +371,17 @@ const parseGoogleCalendarShows = (icsText) => {
 
       const endValue = getIcsValue(eventText, "DTEND");
       const end = endValue ? parseIcsDateValue(endValue) : null;
-      const venue = summary.replace(/^Gig:\s*/i, "").trim() || "Gainesville Show";
+      const venue = stripGigPrefix(summary) || "Gainesville Show";
+      const isPrivate = isPrivateEventName(venue);
+
+      if (isPrivate) {
+        return {
+          date: toIsoDate(start),
+          venue: "Private Event",
+          private: true,
+        };
+      }
+
       const location = getIcsValue(eventText, "LOCATION");
       const parsedLocation = parseCalendarLocation(location);
 
@@ -447,17 +461,22 @@ const createShowCard = (show, type = "upcoming") => {
 
   const body = document.createElement("div");
   body.className = "show-body";
-  body.innerHTML = `
-    <div class="show-date">${formatDate(show.date)}</div>
-    <h2>${show.venue}</h2>
-    <p class="show-meta">${show.time}<br />${show.city || ""}${show.state ? `, ${show.state}` : ""}</p>
-    ${show.address && !show.private ? `<p class="show-meta">${show.address}</p>` : ""}
-    ${show.note ? `<p class="show-note">${show.note}</p>` : ""}
-    <div class="show-actions">
-      <a href="${createCalendarHref(show)}" download="gainesville-${show.date}-${slugify(show.venue)}.ics">Add to my Calendar</a>
-      <a href="${createFacebookShareHref(show)}" target="_blank" rel="noreferrer">Share on Facebook</a>
-    </div>
-  `;
+  body.innerHTML = show.private
+    ? `
+      <div class="show-date">${formatDate(show.date)}</div>
+      <h2>Private Event</h2>
+    `
+    : `
+      <div class="show-date">${formatDate(show.date)}</div>
+      <h2>${show.venue}</h2>
+      <p class="show-meta">${show.time}<br />${show.city || ""}${show.state ? `, ${show.state}` : ""}</p>
+      ${show.address ? `<p class="show-meta">${show.address}</p>` : ""}
+      ${show.note ? `<p class="show-note">${show.note}</p>` : ""}
+      <div class="show-actions">
+        <a href="${createCalendarHref(show)}" download="gainesville-${show.date}-${slugify(show.venue)}.ics">Add to my Calendar</a>
+        <a href="${createFacebookShareHref(show)}" target="_blank" rel="noreferrer">Share on Facebook</a>
+      </div>
+    `;
 
   card.append(image, body);
   return card;

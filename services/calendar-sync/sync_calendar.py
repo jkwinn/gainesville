@@ -72,6 +72,7 @@ class GigEvent:
     image: EventImage | None
     htmlLink: str | None
     updated: str | None
+    private: bool
 
 
 def env(name: str, default: str | None = None) -> str | None:
@@ -127,9 +128,29 @@ def parse_event_time(value: dict[str, str], default_tz: ZoneInfo) -> EventTime:
     )
 
 
+def date_only_event_time(date_value: str, default_tz: ZoneInfo) -> EventTime:
+    date_obj = datetime.strptime(date_value, "%Y-%m-%d").date()
+    dt = datetime.combine(date_obj, time.min, tzinfo=default_tz)
+    return EventTime(
+        iso=dt.isoformat(),
+        date=date_obj.isoformat(),
+        time=None,
+        timeZone=default_tz.key,
+        allDay=True,
+    )
+
+
 def slugify(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
     return slug or "event"
+
+
+def strip_event_prefix(summary: str, event_prefix: str) -> str:
+    return summary[len(event_prefix) :].strip() if summary.lower().startswith(event_prefix.lower()) else summary.strip()
+
+
+def is_private_event_name(name: str) -> bool:
+    return re.match(r"^private event\b", name.strip(), flags=re.IGNORECASE) is not None
 
 
 def stable_event_id(event: dict[str, Any]) -> str:
@@ -242,8 +263,27 @@ def normalize_event(
     if not raw_summary.lower().startswith(event_prefix.lower()):
         return None
 
-    name = raw_summary[len(event_prefix) :].strip() or raw_summary.strip()
+    name = strip_event_prefix(raw_summary, event_prefix) or raw_summary.strip()
     event_id = stable_event_id(event)
+    start = parse_event_time(event["start"], default_tz)
+    end = parse_event_time(event["end"], default_tz)
+
+    if is_private_event_name(name):
+        date_only = date_only_event_time(start.date, default_tz)
+        return GigEvent(
+            id=event_id,
+            calendarEventId="",
+            name="Private Event",
+            rawSummary=f"{event_prefix} Private Event",
+            location="",
+            start=date_only,
+            end=date_only,
+            image=None,
+            htmlLink=None,
+            updated=None,
+            private=True,
+        )
+
     attachment = find_image_attachment(event)
     image = None
 
@@ -267,11 +307,12 @@ def normalize_event(
         name=name,
         rawSummary=raw_summary,
         location=event.get("location") or "",
-        start=parse_event_time(event["start"], default_tz),
-        end=parse_event_time(event["end"], default_tz),
+        start=start,
+        end=end,
         image=image,
         htmlLink=event.get("htmlLink"),
         updated=event.get("updated"),
+        private=False,
     )
 
 

@@ -43,7 +43,8 @@ The JSON includes only events whose summary starts with `Gig:`.
         "publicPath": "assets/calendar/stable-id-ringers-lounge.png"
       },
       "htmlLink": "https://www.google.com/calendar/event?...",
-      "updated": "2026-07-09T00:00:00.000Z"
+      "updated": "2026-07-09T00:00:00.000Z",
+      "private": false
     }
   ]
 }
@@ -69,6 +70,13 @@ Calendar event convention:
 - Location: venue address
 - Start/end: normal Google Calendar event start and end
 - Attachment: optional PNG/JPEG/WebP show image
+
+Private event convention:
+
+- Summary can be `Gig: Private Event` or include extra details like `Gig: Private Event - Smith Party`.
+- The output always collapses the name to `Private Event`.
+- The output strips location, start/end times, attachments, Google event links, and the detailed raw summary.
+- The output keeps only the event date for public rendering.
 
 ## Install On Ubuntu
 
