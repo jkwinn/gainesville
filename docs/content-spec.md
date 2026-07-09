@@ -85,8 +85,12 @@ Dynamic behavior:
 - Events with dates today or in the future render under Upcoming Shows.
 - Events before the current date render under Past Shows.
 - Manual show entries remain the fallback source.
-- A Google Calendar ICS source is staged in `script.js` and should be enabled by filling in `googleCalendarIcsUrl`.
-- When Google Calendar is enabled, only calendar events whose summary begins with `Gig:` should be imported as shows.
+- Google Calendar source: `https://calendar.google.com/calendar/embed?src=gainesvilletheband%40gmail.com&ctz=America%2FLos_Angeles`.
+- The site should import only calendar events whose summary begins with `Gig:`.
+- The embed link is exposed as a visitor-facing "View Google Calendar" action.
+- The filtered importer remains disabled until a direct iCal feed is added to `googleCalendarIcsUrl`.
+- If Google makes the calendar public, `tryDerivedPublicCalendarFeed` can be enabled to derive the standard public iCal feed from the embed URL.
+- Google currently returns `404` for the derived public iCal feed, so use Google Calendar's "Secret address in iCal format" as `googleCalendarIcsUrl` when available.
 
 | Date | Time | Venue | Address | City | State | Venue logo | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |

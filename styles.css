@@ -19,14 +19,23 @@
 }
 
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
+  overflow-x: clip;
   background:
     radial-gradient(circle at 15% 10%, rgba(217, 164, 65, 0.12), transparent 32rem),
     linear-gradient(180deg, #000 0%, #080808 44%, #101010 100%);
+}
+
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
 }
 
 body::before {
@@ -456,6 +465,11 @@ h2 {
   color: var(--amber);
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.calendar-source-link {
+  margin-top: 0;
+  white-space: nowrap;
 }
 
 .photo-grid {

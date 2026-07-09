@@ -1,4 +1,7 @@
+const googleCalendarEmbedUrl =
+  "https://calendar.google.com/calendar/embed?src=gainesvilletheband%40gmail.com&ctz=America%2FLos_Angeles";
 const googleCalendarIcsUrl = "";
+const tryDerivedPublicCalendarFeed = false;
 const googleGigPrefix = "Gig:";
 
 const manualShows = [
@@ -360,6 +363,8 @@ const parseGoogleCalendarShows = (icsText) => {
       if (!summary.toLowerCase().startsWith(googleGigPrefix.toLowerCase())) return null;
 
       const start = parseIcsDateValue(getIcsValue(eventText, "DTSTART"));
+      if (!start || Number.isNaN(start.getTime())) return null;
+
       const endValue = getIcsValue(eventText, "DTEND");
       const end = endValue ? parseIcsDateValue(endValue) : null;
       const venue = summary.replace(/^Gig:\s*/i, "").trim() || "Gainesville Show";
@@ -377,11 +382,23 @@ const parseGoogleCalendarShows = (icsText) => {
     .filter(Boolean);
 };
 
+const getGoogleCalendarFeedUrl = () => {
+  if (googleCalendarIcsUrl) return googleCalendarIcsUrl;
+  if (!tryDerivedPublicCalendarFeed || !googleCalendarEmbedUrl) return "";
+
+  const url = new URL(googleCalendarEmbedUrl);
+  const calendarId = url.searchParams.get("src");
+  if (!calendarId) return "";
+
+  return `https://calendar.google.com/calendar/ical/${encodeURIComponent(calendarId)}/public/basic.ics`;
+};
+
 const loadGoogleCalendarShows = async () => {
-  if (!googleCalendarIcsUrl) return [];
+  const feedUrl = getGoogleCalendarFeedUrl();
+  if (!feedUrl) return [];
 
   try {
-    const response = await fetch(googleCalendarIcsUrl);
+    const response = await fetch(feedUrl);
     if (!response.ok) throw new Error(`Calendar request failed: ${response.status}`);
     return parseGoogleCalendarShows(await response.text());
   } catch (error) {
