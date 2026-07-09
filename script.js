@@ -3,6 +3,7 @@ const googleCalendarEmbedUrl =
 const googleCalendarIcsUrl = "";
 const tryDerivedPublicCalendarFeed = false;
 const googleGigPrefix = "Gig:";
+const facebookVideosJsonUrl = "data/videos.json";
 
 const manualShows = [
   {
@@ -303,6 +304,11 @@ const createWordmark = (show) => {
   return mark;
 };
 
+const setText = (element, value) => {
+  element.textContent = value;
+  return element;
+};
+
 const stripGigPrefix = (summary) => summary.replace(/^Gig:\s*/i, "").trim();
 
 const isPrivateEventName = (name) => /^private event\b/i.test(name.trim());
@@ -527,5 +533,59 @@ const renderMembers = () => {
   });
 };
 
+const loadFacebookVideos = async () => {
+  try {
+    const response = await fetch(facebookVideosJsonUrl, { cache: "no-store" });
+    if (!response.ok) return [];
+    const payload = await response.json();
+    return Array.isArray(payload.videos) ? payload.videos : [];
+  } catch (error) {
+    console.warn("Facebook videos could not be loaded.", error);
+    return [];
+  }
+};
+
+const createVideoCard = (video) => {
+  const card = document.createElement("article");
+  card.className = "video-card";
+
+  const frameWrap = document.createElement("div");
+  frameWrap.className = "video-frame";
+
+  const iframe = document.createElement("iframe");
+  iframe.src = video.embedUrl;
+  iframe.title = video.title || "Gainesville Facebook video";
+  iframe.loading = "lazy";
+  iframe.allow = "autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share";
+  iframe.allowFullscreen = true;
+  frameWrap.append(iframe);
+
+  const body = document.createElement("div");
+  body.className = "video-body";
+
+  const title = setText(document.createElement("h3"), video.title || "Gainesville live video");
+  const link = setText(document.createElement("a"), "Watch on Facebook");
+  link.className = "text-link";
+  link.href = video.facebookUrl;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+
+  body.append(title, link);
+  card.append(frameWrap, body);
+  return card;
+};
+
+const renderFacebookVideos = async () => {
+  const list = document.querySelector("#facebook-videos");
+  if (!list) return;
+
+  const videos = (await loadFacebookVideos()).filter((video) => video.embedUrl && video.facebookUrl);
+  if (videos.length === 0) return;
+
+  list.replaceChildren();
+  videos.slice(0, 4).forEach((video) => list.append(createVideoCard(video)));
+};
+
 renderShows();
 renderMembers();
+renderFacebookVideos();
