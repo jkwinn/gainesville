@@ -36,6 +36,7 @@ const manualShows = [
     address: "2241 Shelter Island Drive",
     city: "San Diego",
     state: "CA",
+    logo: "assets/venues/humphreys-logo-mono.png",
   },
   {
     date: "2026-09-18",
