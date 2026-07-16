@@ -64,6 +64,12 @@ The JSON includes only events whose summary starts with `Gig:`.
 5. Share the Google Calendar with the service account email as `See all event details`.
 6. For event PNG/JPEG attachments, make sure the attached Drive file is readable by the service account too.
 
+Configured service account:
+
+`gainesvill-sa@copper-freedom-165318.iam.gserviceaccount.com`
+
+Do not commit the service account JSON key. Store it on the server and point `GOOGLE_APPLICATION_CREDENTIALS` to that file.
+
 Calendar event convention:
 
 - Summary: `Gig: Venue Name`
