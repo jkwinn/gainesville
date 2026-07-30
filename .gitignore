@@ -4,6 +4,9 @@
 # Dependencies
 node_modules/
 .venv/
+.venv-ansible/
+.ansible-home/
+.ansible-tmp/
 __pycache__/
 *.py[cod]
 

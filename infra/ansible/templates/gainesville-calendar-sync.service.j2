@@ -1,0 +1,19 @@
+[Unit]
+Description=Sync Gainesville Google Calendar shows
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User={{ gainesville_user }}
+Group={{ gainesville_group }}
+WorkingDirectory={{ gainesville_app_dir }}
+EnvironmentFile={{ gainesville_config_dir }}/calendar-sync.env
+ExecStart={{ gainesville_app_dir }}/services/calendar-sync/.venv/bin/python {{ gainesville_app_dir }}/services/calendar-sync/sync_calendar.py
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths={{ gainesville_web_root }}
+ReadOnlyPaths={{ gainesville_app_dir }} {{ gainesville_config_dir }}

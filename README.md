@@ -20,3 +20,7 @@ If the URL returns 404 after pushing, open the repository settings in GitHub and
 
 - Settings > Pages
 - Source: GitHub Actions
+
+## Ubuntu Deploy
+
+Ansible automation for a future Ubuntu host lives in `infra/ansible`. It deploys the static site, installs the Google Calendar sync service, and keeps the service account key outside the repo.

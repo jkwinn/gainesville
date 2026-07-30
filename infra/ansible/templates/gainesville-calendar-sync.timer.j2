@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Gainesville calendar sync every {{ gainesville_calendar_sync_interval }}
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec={{ gainesville_calendar_sync_interval }}
+Unit=gainesville-calendar-sync.service
+
+[Install]
+WantedBy=timers.target
