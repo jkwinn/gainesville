@@ -1,0 +1,38 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ gainesville_server_name }};
+
+    root {{ gainesville_web_root }};
+    index index.html;
+
+    server_tokens off;
+    autoindex off;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+    add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: https:; script-src 'self'; style-src 'self'; connect-src 'self'; frame-src 'self' https://www.facebook.com https://web.facebook.com https://www.youtube.com https://www.youtube-nocookie.com; form-action 'self' mailto:;" always;
+{% if gainesville_enable_hsts | bool %}
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+{% endif %}
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location ~ /\.(?!well-known) {
+        deny all;
+    }
+
+    location ~* \.(?:css|js|png|jpg|jpeg|gif|webp|ico|svg)$ {
+        expires 30d;
+        try_files $uri =404;
+    }
+
+    location ~* \.(?:json)$ {
+        expires -1;
+        try_files $uri =404;
+    }
+}

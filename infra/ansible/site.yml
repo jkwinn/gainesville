@@ -11,6 +11,7 @@
     gainesville_app_dir: /opt/gainesville
     gainesville_web_root: /var/www/gainesville
     gainesville_config_dir: /etc/gainesville
+    gainesville_server_name: _
 
     gainesville_calendar_id: gainesvilletheband@gmail.com
     gainesville_event_prefix: "Gig:"
@@ -24,6 +25,18 @@
     gainesville_calendar_output_json: "{{ gainesville_web_root }}/data/shows.json"
     gainesville_calendar_image_dir: "{{ gainesville_web_root }}/assets/calendar"
     gainesville_calendar_image_public_prefix: assets/calendar
+
+    gainesville_enable_firewall: true
+    gainesville_enable_fail2ban: true
+    gainesville_enable_unattended_upgrades: true
+    gainesville_enable_sysctl_hardening: true
+    gainesville_harden_ssh: false
+    gainesville_enable_hsts: false
+    gainesville_allowed_ssh_profile: OpenSSH
+    gainesville_allowed_web_profile: Nginx Full
+    gainesville_ssh_authorized_user: "{{ ansible_user | default(ansible_user_id) }}"
+    gainesville_ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMCrTt0antmSMSolGkl020p/2o4rOxwuSR39KUsAMVaG jwinn@localfedora.com"
 
   pre_tasks:
     - name: Validate service account key source if provided
@@ -40,13 +53,88 @@
       ansible.builtin.apt:
         name:
           - ca-certificates
+          - fail2ban
           - git
+          - nginx
           - python3
           - python3-pip
           - python3-venv
           - rsync
+          - ufw
+          - unattended-upgrades
         state: present
         update_cache: true
+
+    - name: Enable unattended security updates
+      ansible.builtin.copy:
+        src: files/20auto-upgrades
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        owner: root
+        group: root
+        mode: "0644"
+      when: gainesville_enable_unattended_upgrades | bool
+
+    - name: Configure unattended security updates
+      ansible.builtin.copy:
+        src: files/50unattended-upgrades
+        dest: /etc/apt/apt.conf.d/50unattended-upgrades
+        owner: root
+        group: root
+        mode: "0644"
+      when: gainesville_enable_unattended_upgrades | bool
+
+    - name: Install network hardening sysctl settings
+      ansible.builtin.copy:
+        src: files/99-gainesville-hardening.conf
+        dest: /etc/sysctl.d/99-gainesville-hardening.conf
+        owner: root
+        group: root
+        mode: "0644"
+      when: gainesville_enable_sysctl_hardening | bool
+      notify:
+        - Apply sysctl settings
+
+    - name: Install fail2ban ssh jail
+      ansible.builtin.copy:
+        src: files/fail2ban-sshd.local
+        dest: /etc/fail2ban/jail.d/gainesville-sshd.local
+        owner: root
+        group: root
+        mode: "0644"
+      when: gainesville_enable_fail2ban | bool
+      notify:
+        - Restart fail2ban
+
+    - name: Enable fail2ban
+      ansible.builtin.systemd:
+        name: fail2ban
+        enabled: true
+        state: started
+      when: gainesville_enable_fail2ban | bool
+
+    - name: Look up SSH authorized key user
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ gainesville_ssh_authorized_user }}"
+      when: gainesville_ssh_authorized_keys | length > 0
+
+    - name: Ensure SSH directory exists for authorized key user
+      ansible.builtin.file:
+        path: "{{ ansible_facts.getent_passwd[gainesville_ssh_authorized_user][4] }}/.ssh"
+        state: directory
+        owner: "{{ gainesville_ssh_authorized_user }}"
+        mode: "0700"
+      when: gainesville_ssh_authorized_keys | length > 0
+
+    - name: Add managed SSH public keys
+      ansible.builtin.lineinfile:
+        path: "{{ ansible_facts.getent_passwd[gainesville_ssh_authorized_user][4] }}/.ssh/authorized_keys"
+        line: "{{ item }}"
+        create: true
+        owner: "{{ gainesville_ssh_authorized_user }}"
+        mode: "0600"
+      loop: "{{ gainesville_ssh_authorized_keys }}"
+      when: gainesville_ssh_authorized_keys | length > 0
 
     - name: Create Gainesville group
       ansible.builtin.group:
@@ -61,6 +149,26 @@
         create_home: false
         shell: /usr/sbin/nologin
         system: true
+
+    - name: Install optional SSH hardening
+      ansible.builtin.template:
+        src: templates/99-gainesville-sshd-hardening.conf.j2
+        dest: /etc/ssh/sshd_config.d/99-gainesville-hardening.conf
+        owner: root
+        group: root
+        mode: "0644"
+        validate: /usr/sbin/sshd -t -f %s
+      when: gainesville_harden_ssh | bool
+      notify:
+        - Restart ssh
+
+    - name: Remove optional SSH hardening when disabled
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config.d/99-gainesville-hardening.conf
+        state: absent
+      when: not gainesville_harden_ssh | bool
+      notify:
+        - Restart ssh
 
     - name: Create application, web, and config directories
       ansible.builtin.file:
@@ -117,6 +225,96 @@
           - "{{ gainesville_web_root }}/"
       register: publish_static_site
       changed_when: publish_static_site.stdout != ""
+
+    - name: Install nginx Gainesville site
+      ansible.builtin.template:
+        src: templates/nginx-gainesville.conf.j2
+        dest: /etc/nginx/sites-available/gainesville
+        owner: root
+        group: root
+        mode: "0644"
+      notify:
+        - Reload nginx
+
+    - name: Enable nginx Gainesville site
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/gainesville
+        dest: /etc/nginx/sites-enabled/gainesville
+        state: link
+        owner: root
+        group: root
+      notify:
+        - Reload nginx
+
+    - name: Disable nginx default site
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify:
+        - Reload nginx
+
+    - name: Validate nginx configuration
+      ansible.builtin.command:
+        argv:
+          - nginx
+          - -t
+      changed_when: false
+
+    - name: Enable nginx
+      ansible.builtin.systemd:
+        name: nginx
+        enabled: true
+        state: started
+
+    - name: Allow SSH through UFW before enabling firewall
+      ansible.builtin.command:
+        argv:
+          - ufw
+          - allow
+          - "{{ gainesville_allowed_ssh_profile }}"
+      register: ufw_allow_ssh
+      changed_when: "'Skipping adding existing rule' not in ufw_allow_ssh.stdout"
+      when: gainesville_enable_firewall | bool
+
+    - name: Allow web traffic through UFW
+      ansible.builtin.command:
+        argv:
+          - ufw
+          - allow
+          - "{{ gainesville_allowed_web_profile }}"
+      register: ufw_allow_web
+      changed_when: "'Skipping adding existing rule' not in ufw_allow_web.stdout"
+      when: gainesville_enable_firewall | bool
+
+    - name: Set UFW default incoming policy
+      ansible.builtin.command:
+        argv:
+          - ufw
+          - default
+          - deny
+          - incoming
+      changed_when: false
+      when: gainesville_enable_firewall | bool
+
+    - name: Set UFW default outgoing policy
+      ansible.builtin.command:
+        argv:
+          - ufw
+          - default
+          - allow
+          - outgoing
+      changed_when: false
+      when: gainesville_enable_firewall | bool
+
+    - name: Enable UFW
+      ansible.builtin.command:
+        argv:
+          - ufw
+          - --force
+          - enable
+      register: ufw_enable
+      changed_when: "'Firewall is active and enabled on system startup' in ufw_enable.stdout"
+      when: gainesville_enable_firewall | bool
 
     - name: Copy Google service account key when provided
       ansible.builtin.copy:
@@ -194,6 +392,30 @@
         state: started
 
   handlers:
+    - name: Apply sysctl settings
+      ansible.builtin.command:
+        argv:
+          - sysctl
+          - --system
+      changed_when: true
+
+    - name: Restart fail2ban
+      ansible.builtin.systemd:
+        name: fail2ban
+        enabled: true
+        state: restarted
+
+    - name: Restart ssh
+      ansible.builtin.systemd:
+        name: ssh
+        state: restarted
+
+    - name: Reload nginx
+      ansible.builtin.systemd:
+        name: nginx
+        enabled: true
+        state: reloaded
+
     - name: Reload systemd
       ansible.builtin.systemd:
         daemon_reload: true
