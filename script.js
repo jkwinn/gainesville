@@ -5,6 +5,91 @@ const tryDerivedPublicCalendarFeed = false;
 const googleGigPrefix = "Gig:";
 const facebookVideosJsonUrl = "data/videos.json";
 
+const defaultShowTheme = {
+  background: "#050505",
+  imageBackground: "#050505",
+  foreground: "#f6f2e8",
+  muted: "#d8d0bf",
+  accent: "#d9a441",
+  border: "rgba(246, 242, 232, 0.32)",
+  actionForeground: "#050505",
+};
+
+const venueThemes = {
+  "The Camp Store": {
+    background: "#f8fbfc",
+    imageBackground: "#f8fbfc",
+    foreground: "#303b42",
+    muted: "#53626b",
+    accent: "#5dade0",
+    border: "rgba(48, 59, 66, 0.22)",
+    actionForeground: "#050505",
+  },
+  "Ringers Lounge": {
+    background: "#020202",
+    imageBackground: "#020202",
+    foreground: "#f6f2e8",
+    muted: "#d8d0bf",
+    accent: "#f01820",
+    border: "rgba(246, 242, 232, 0.34)",
+    actionForeground: "#ffffff",
+  },
+  "The Moose Lodge 1325": {
+    background: "#fbfaf7",
+    imageBackground: "#fbfaf7",
+    foreground: "#211b18",
+    muted: "#5b514b",
+    accent: "#c81f27",
+    border: "rgba(33, 27, 24, 0.2)",
+    actionForeground: "#ffffff",
+  },
+  "Escondido Moose Lodge": {
+    background: "#fbfaf7",
+    imageBackground: "#fbfaf7",
+    foreground: "#211b18",
+    muted: "#5b514b",
+    accent: "#c81f27",
+    border: "rgba(33, 27, 24, 0.2)",
+    actionForeground: "#ffffff",
+  },
+  Humphreys: {
+    background: "#000000",
+    imageBackground: "#000000",
+    foreground: "#f6f2e8",
+    muted: "#c9d4df",
+    accent: "#0098d8",
+    border: "rgba(246, 242, 232, 0.34)",
+    actionForeground: "#050505",
+  },
+  "Rancho Guejito Vineyard": {
+    background: "#f7f6ef",
+    imageBackground: "#f7f6ef",
+    foreground: "#2f302b",
+    muted: "#626556",
+    accent: "#7e8f5d",
+    border: "rgba(47, 48, 43, 0.22)",
+    actionForeground: "#050505",
+  },
+  "Bel Vino Winery": {
+    background: "#fbfaf6",
+    imageBackground: "#fbfaf6",
+    foreground: "#2c2416",
+    muted: "#665a44",
+    accent: "#b99845",
+    border: "rgba(44, 36, 22, 0.22)",
+    actionForeground: "#050505",
+  },
+  "The Landings": {
+    background: "#020202",
+    imageBackground: "#020202",
+    foreground: "#f6f2e8",
+    muted: "#d8d0bf",
+    accent: "#d9a441",
+    border: "rgba(246, 242, 232, 0.32)",
+    actionForeground: "#050505",
+  },
+};
+
 const manualShows = [
   {
     date: "2026-07-29",
@@ -304,6 +389,23 @@ const createWordmark = (show) => {
   return mark;
 };
 
+const applyShowTheme = (card, show) => {
+  const theme = show.theme || venueThemes[show.venue] || defaultShowTheme;
+  const properties = {
+    "--show-bg": theme.background,
+    "--show-image-bg": theme.imageBackground || theme.background,
+    "--show-fg": theme.foreground,
+    "--show-muted": theme.muted,
+    "--show-accent": theme.accent,
+    "--show-border": theme.border,
+    "--show-action-fg": theme.actionForeground,
+  };
+
+  Object.entries(properties).forEach(([name, value]) => {
+    if (value) card.style.setProperty(name, value);
+  });
+};
+
 const setText = (element, value) => {
   element.textContent = value;
   return element;
@@ -441,11 +543,13 @@ const mergeShows = (manual, calendar) => {
 const createShowCard = (show, type = "upcoming") => {
   const card = document.createElement("article");
   card.className = `show-card ${type}`;
+  applyShowTheme(card, show);
 
   const image = document.createElement("div");
   image.className = "show-image";
 
   if (type === "past" && show.image) {
+    image.classList.add("has-photo");
     const img = document.createElement("img");
     img.src = show.image;
     img.alt = `${show.venue} past show video still`;
