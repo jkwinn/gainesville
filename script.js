@@ -12,6 +12,8 @@ const defaultShowTheme = {
   muted: "#d8d0bf",
   accent: "#d9a441",
   border: "rgba(246, 242, 232, 0.32)",
+  glow: "rgba(217, 164, 65, 0.2)",
+  glowSoft: "rgba(217, 164, 65, 0.08)",
   actionForeground: "#050505",
 };
 
@@ -23,6 +25,8 @@ const venueThemes = {
     muted: "#53626b",
     accent: "#5dade0",
     border: "rgba(48, 59, 66, 0.22)",
+    glow: "rgba(93, 173, 224, 0.18)",
+    glowSoft: "rgba(93, 173, 224, 0.08)",
     actionForeground: "#050505",
   },
   "Ringers Lounge": {
@@ -32,6 +36,8 @@ const venueThemes = {
     muted: "#d8d0bf",
     accent: "#f01820",
     border: "rgba(246, 242, 232, 0.34)",
+    glow: "rgba(240, 24, 32, 0.22)",
+    glowSoft: "rgba(240, 24, 32, 0.09)",
     actionForeground: "#ffffff",
   },
   "The Moose Lodge 1325": {
@@ -41,6 +47,8 @@ const venueThemes = {
     muted: "#5b514b",
     accent: "#c81f27",
     border: "rgba(33, 27, 24, 0.2)",
+    glow: "rgba(200, 31, 39, 0.2)",
+    glowSoft: "rgba(200, 31, 39, 0.08)",
     actionForeground: "#ffffff",
   },
   "Escondido Moose Lodge": {
@@ -50,6 +58,8 @@ const venueThemes = {
     muted: "#5b514b",
     accent: "#c81f27",
     border: "rgba(33, 27, 24, 0.2)",
+    glow: "rgba(200, 31, 39, 0.2)",
+    glowSoft: "rgba(200, 31, 39, 0.08)",
     actionForeground: "#ffffff",
   },
   Humphreys: {
@@ -59,6 +69,8 @@ const venueThemes = {
     muted: "#c9d4df",
     accent: "#0098d8",
     border: "rgba(246, 242, 232, 0.34)",
+    glow: "rgba(0, 152, 216, 0.22)",
+    glowSoft: "rgba(0, 152, 216, 0.09)",
     actionForeground: "#050505",
   },
   "Rancho Guejito Vineyard": {
@@ -68,6 +80,8 @@ const venueThemes = {
     muted: "#626556",
     accent: "#7e8f5d",
     border: "rgba(47, 48, 43, 0.22)",
+    glow: "rgba(126, 143, 93, 0.18)",
+    glowSoft: "rgba(126, 143, 93, 0.08)",
     actionForeground: "#050505",
   },
   "Bel Vino Winery": {
@@ -77,6 +91,8 @@ const venueThemes = {
     muted: "#665a44",
     accent: "#b99845",
     border: "rgba(44, 36, 22, 0.22)",
+    glow: "rgba(185, 152, 69, 0.22)",
+    glowSoft: "rgba(185, 152, 69, 0.09)",
     actionForeground: "#050505",
   },
   "The Landings": {
@@ -86,6 +102,8 @@ const venueThemes = {
     muted: "#d8d0bf",
     accent: "#d9a441",
     border: "rgba(246, 242, 232, 0.32)",
+    glow: "rgba(217, 164, 65, 0.2)",
+    glowSoft: "rgba(217, 164, 65, 0.08)",
     actionForeground: "#050505",
   },
 };
@@ -398,6 +416,8 @@ const applyShowTheme = (card, show) => {
     "--show-muted": theme.muted,
     "--show-accent": theme.accent,
     "--show-border": theme.border,
+    "--show-glow": theme.glow,
+    "--show-glow-soft": theme.glowSoft,
     "--show-action-fg": theme.actionForeground,
   };
 
