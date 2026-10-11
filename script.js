@@ -291,7 +291,7 @@ const formatDate = (value) =>
     timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00Z`));
 
-const siteUrl = "https://jkwinn.github.io/gainesville/";
+const siteUrl = "https://gainesvilletheband.com/";
 
 const getToday = () => {
   const today = new Date();
